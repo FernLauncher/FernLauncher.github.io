@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FernLauncher — A Modern Minecraft Launcher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0f0d;
+      --bg2: #111411;
+      --bg3: #161b16;
+      --surface: #1a201a;
+      --surface2: #1f271f;
+      --border: #2a352a;
+      --green: #4ade80;
+      --green-dim: #22c55e;
+      --green-deep: #16a34a;
+      --green-glow: rgba(74, 222, 128, 0.12);
+      --green-glow2: rgba(74, 222, 128, 0.05);
+      --text: #e8f0e8;
+      --text-dim: #9aab9a;
+      --text-muted: #5a6b5a;
+      --radius: 12px;
+      --radius-lg: 20px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Noise texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.6;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(1.5rem, 5vw, 4rem);
+      height: 60px;
+      background: rgba(13, 15, 13, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text);
+      font-family: 'Nunito', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .nav-logo .leaf {
+      font-size: 1.25rem;
+      filter: drop-shadow(0 0 6px rgba(74, 222, 128, 0.5));
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 400;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-github {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-dim) !important;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 5px 12px !important;
+      transition: border-color 0.2s, color 0.2s !important;
+    }
+
+    .nav-github:hover {
+      border-color: var(--green-dim) !important;
+      color: var(--green) !important;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: clamp(5rem, 14vw, 9rem) clamp(1.5rem, 5vw, 4rem) clamp(4rem, 10vw, 7rem);
+      overflow: hidden;
+    }
+
+    /* radial glow behind hero */
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -80px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 700px;
+      height: 500px;
+      background: radial-gradient(ellipse at center, rgba(74, 222, 128, 0.09) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--green-glow2);
+      border: 1px solid rgba(74, 222, 128, 0.2);
+      border-radius: 999px;
+      padding: 5px 14px;
+      font-size: 0.78rem;
+      color: var(--green);
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .hero-badge .dot {
+      width: 6px;
+      height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s ease infinite;
+    }
+
+    .hero h1 {
+      font-family: 'Nunito', sans-serif;
+      font-size: clamp(3rem, 8vw, 6rem);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      margin-bottom: 1.5rem;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: var(--green);
+    }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2.5vw, 1.2rem);
+      color: var(--text-dim);
+      max-width: 560px;
+      font-weight: 400;
+      margin-bottom: 2.5rem;
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--green);
+      color: #0a1a0a;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4);
+    }
+
+    .btn-primary:hover {
+      background: #6beeaa;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(74, 222, 128, 0.25);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: transparent;
+      color: var(--text-dim);
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      transition: border-color 0.2s, color 0.2s, transform 0.15s;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--green-dim);
+      color: var(--text);
+      transform: translateY(-1px);
+    }
+
+    .hero-note {
+      margin-top: 1.2rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      animation: fadeUp 0.6s 0.4s ease both;
+    }
+
+    /* ── FEATURES TICKER ── */
+    .ticker-wrapper {
+      overflow: hidden;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 0;
+      background: var(--bg2);
+    }
+
+    .ticker {
+      display: flex;
+      gap: 3rem;
+      animation: ticker 28s linear infinite;
+      white-space: nowrap;
+    }
+
+    .ticker-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      font-weight: 400;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    .ticker-item .sep { color: var(--green); font-size: 1rem; }
+
+    /* ── SECTIONS SHARED ── */
+    section {
+      padding: clamp(3.5rem, 8vw, 6rem) clamp(1.5rem, 5vw, 4rem);
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--green);
+      font-weight: 500;
+      margin-bottom: 0.75rem;
+    }
+
+    .section-title {
+      font-family: 'Nunito', sans-serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+
+    .section-desc {
+      color: var(--text-dim);
+      font-size: 1rem;
+      font-weight: 400;
+      max-width: 520px;
+    }
+
+    /* ── FEATURES GRID ── */
+    .features {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .features-header {
+      margin-bottom: 3rem;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    @media (max-width: 900px) {
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 560px) {
+      .features-grid { grid-template-columns: 1fr; }
+    }
+
+    .feature-card {
+      background: var(--bg);
+      padding: 2rem;
+      transition: background 0.2s;
+    }
+
+    .feature-card:hover { background: var(--surface); }
+
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--green-glow);
+      border: 1px solid rgba(74, 222, 128, 0.2);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .feature-card h3 {
+      font-family: 'Nunito', sans-serif;
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-card p {
+      font-size: 0.875rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+      font-weight: 400;
+    }
+
+    /* ── SCREENSHOTS ── */
+    .screenshots { background: var(--bg2); }
+
+    .screenshots-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .screenshots-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .screenshots-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1rem;
+    }
+
+    .screenshot-placeholder {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .screenshot-placeholder.main { aspect-ratio: 16/10; }
+    .screenshot-placeholder.side { aspect-ratio: 4/5; }
+
+    .screenshot-placeholder .icon {
+      font-size: 2.5rem;
+      opacity: 0.4;
+    }
+
+    .screenshot-wrap {
+      position: relative;
+    }
+
+    .screenshot-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .screenshot-overlay span {
+      color: white;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      padding: 6px 16px;
+      opacity: 0;
+      transform: scale(0.9);
+      transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .screenshot-wrap:hover .screenshot-overlay { background: rgba(0,0,0,0.3); }
+    .screenshot-wrap:hover .screenshot-overlay span { opacity: 1; transform: scale(1); }
+
+    /* ── MODLOADERS ── */
+    .modloaders-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .modloaders-header {
+      margin-bottom: 2.5rem;
+    }
+
+    .loaders-grid {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .loader-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      transition: border-color 0.2s, background 0.2s;
+      flex: 1;
+      min-width: 160px;
+    }
+
+    .loader-chip:hover {
+      border-color: rgba(74, 222, 128, 0.3);
+      background: var(--surface2);
+    }
+
+    .loader-chip img.logo {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+
+    .loader-chip svg.logo { flex-shrink: 0; }
+
+    .loader-chip h4 {
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .loader-chip p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* ── CTA ── */
+    .cta {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+    }
+
+    .cta-inner {
+      max-width: 800px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .cta-inner .section-title { margin-bottom: 1.2rem; }
+
+    .cta-inner .section-desc {
+      margin: 0 auto 2.5rem;
+    }
+
+    .cta-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .cta-meta {
+      margin-top: 1.5rem;
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .cta-meta span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .cta-meta .check { color: var(--green); }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 2rem clamp(1.5rem, 5vw, 4rem);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .footer-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-dim);
+      font-size: 0.875rem;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.8rem;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--text-dim); }
+
+    footer p {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    @keyframes ticker {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .screenshots-grid { grid-template-columns: 1fr; }
+      .screenshot-placeholder.side { aspect-ratio: 16/9; }
+    }
+
+    @media (max-width: 480px) {
+      .loader-chip { min-width: 140px; }
+    }
+
+    /* scroll reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="#" class="nav-logo">
+      <span class="leaf">🌿</span>
+      FernLauncher
+    </a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#screenshots">Screenshots</a></li>
+      <li><a href="#download">Download</a></li>
+      <li>
+        <a href="https://github.com/FernLauncher/fernlauncher" target="_blank" class="nav-github">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.387.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.335-1.755-1.335-1.755-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.605-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
+          GitHub
+        </a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge">
+      <span class="dot"></span>
+      Free & Open Source
+    </div>
+
+    <h1>The <em>Minecraft</em> launcher<br/>you actually want</h1>
+
+    <p class="hero-sub">
+      Supports Fabric, Forge, NeoForge, Quilt and vanilla out of the box. Grab your mods, manage your instances, and just play.
+    </p>
+
+    <div class="hero-actions">
+      <a href="https://github.com/FernLauncher/fernlauncher/releases" class="btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download for Windows
+      </a>
+      <a href="https://github.com/FernLauncher/fernlauncher" target="_blank" class="btn-secondary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.387.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.335-1.755-1.335-1.755-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.605-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
+        View on GitHub
+      </a>
+    </div>
+
+    <p class="hero-note">Windows x64 · Linux coming soon · Free forever</p>
+  </section>
+
+  <!-- TICKER -->
+  <div class="ticker-wrapper" aria-hidden="true">
+    <div class="ticker">
+      <!-- duplicated for seamless loop -->
+      <span class="ticker-item"><span class="sep">🌿</span> Vanilla &amp; Fabric</span>
+      <span class="ticker-item"><span class="sep">🌿</span> Forge &amp; NeoForge</span>
+      <span class="ticker-item"><span class="sep">🌿</span> Quilt Support</span>
+      <span class="ticker-item"><span class="sep">🌿</span> Modrinth Integration</span>
+      <span class="ticker-item"><span class="sep">🌿</span> CurseForge Integration</span>
+      <span class="ticker-item"><span class="sep">🌿</span> Auto Java Download</span>
+      <span class="ticker-item"><span class="sep">🌿</span> Instance Management</span>
+      <span class="ticker-item"><span class="sep">🌿</span> Shader Browser</span>
+      <span class="ticker-item"><span class="sep">🌿</span> Resource Pack Browser</span>
+      <span class="ticker-item"><span class="sep">🌿</span> Microsoft &amp; Offline Accounts</span>
+      <span class="ticker-item"><span class="sep">🌿</span> Dark / Light Theme</span>
+      <span class="ticker-item"><span class="sep">🌿</span> Auto Updater</span>
+
+      <span class="ticker-item"><span class="sep">🌿</span> Vanilla &amp; Fabric</span>
+      <span class="ticker-item"><span class="sep">🌿</span> Forge &amp; NeoForge</span>
+      <span class="ticker-item"><span class="sep">🌿</span> Quilt Support</span>
+      <span class="ticker-item"><span class="sep">🌿</span> Modrinth Integration</span>
+      <span class="ticker-item"><span class="sep">🌿</span> CurseForge Integration</span>
+      <span class="ticker-item"><span class="sep">🌿</span> Auto Java Download</span>
+      <span class="ticker-item"><span class="sep">🌿</span> Instance Management</span>
+      <span class="ticker-item"><span class="sep">🌿</span> Shader Browser</span>
+      <span class="ticker-item"><span class="sep">🌿</span> Resource Pack Browser</span>
+      <span class="ticker-item"><span class="sep">🌿</span> Microsoft &amp; Offline Accounts</span>
+      <span class="ticker-item"><span class="sep">🌿</span> Dark / Light Theme</span>
+      <span class="ticker-item"><span class="sep">🌿</span> Auto Updater</span>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="features">
+      <div class="features-header reveal">
+        <p class="section-label">Features</p>
+        <h2 class="section-title">Everything you need,<br/>nothing you don't</h2>
+        <p class="section-desc">Built for players who want real control. FernLauncher handles the boring stuff — Java, updates, mods — so you can just play.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card reveal">
+          <div class="feature-icon">☕</div>
+          <h3>Automatic Java</h3>
+          <p>Java 8, 17, and 21 are downloaded and managed for you. No version juggling, no system path headaches.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">📦</div>
+          <h3>Mod Browser</h3>
+          <p>Browse, install, and update mods directly from Modrinth and CurseForge without leaving the launcher.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">🧩</div>
+          <h3>Modpack Support</h3>
+          <p>One-click install for modpacks from Modrinth and CurseForge, with a manual fallback for everything else.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">🗂️</div>
+          <h3>Instance Management</h3>
+          <p>Organize your instances into groups, give them custom icons, and import/export them with ease.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">🎨</div>
+          <h3>Resource &amp; Shader Packs</h3>
+          <p>Browse and install resource packs and shader packs directly from the launcher — no manual file juggling.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">🔄</div>
+          <h3>Auto-Updater</h3>
+          <p>FernLauncher keeps itself up to date in the background. You'll always be on the latest version without thinking about it.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">🌙</div>
+          <h3>Dark / Light / System Theme</h3>
+          <p>Choose between dark, light, or system-matching theme — your launcher, your preference.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">🌐</div>
+          <h3>English &amp; French</h3>
+          <p>Fully available in English. French translation is underway at around 20% — contributions welcome on GitHub.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon">🔑</div>
+          <h3>Microsoft &amp; Offline Accounts</h3>
+          <p>Sign in with your Microsoft account or play offline — both supported without compromise.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODLOADERS -->
+  <section style="background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+    <div class="modloaders-inner">
+      <div class="modloaders-header reveal">
+        <p class="section-label">Mod Loaders</p>
+        <h2 class="section-title">Play any modded version</h2>
+        <p class="section-desc">All major mod loaders are supported, from the classics to the newest.</p>
+      </div>
+      <div class="loaders-grid reveal">
+        <div class="loader-chip">
+          <img class="logo" src="assets/vanilla.webp" alt="Vanilla" />
+          <div>
+            <h4>Vanilla</h4>
+            <p>All versions</p>
+          </div>
+        </div>
+        <div class="loader-chip">
+          <img class="logo" src="assets/fabric.png" alt="Fabric" />
+          <div>
+            <h4>Fabric</h4>
+            <p>All versions</p>
+          </div>
+        </div>
+        <div class="loader-chip">
+          <img class="logo" src="assets/forge.jpg" alt="Forge" />
+          <div>
+            <h4>Forge</h4>
+            <p>All versions</p>
+          </div>
+        </div>
+        <div class="loader-chip">
+          <img class="logo" src="assets/neoforge.png" alt="NeoForge" />
+          <div>
+            <h4>NeoForge</h4>
+            <p>All versions</p>
+          </div>
+        </div>
+        <div class="loader-chip">
+          <img class="logo" src="assets/quilt.png" alt="Quilt" />
+          <div>
+            <h4>Quilt</h4>
+            <p>All versions</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCREENSHOTS -->
+  <section class="screenshots" id="screenshots">
+    <div class="screenshots-inner">
+      <div class="screenshots-header">
+        <div class="reveal">
+          <p class="section-label">Screenshots</p>
+          <h2 class="section-title">See it in action</h2>
+        </div>
+      </div>
+      <div class="screenshots-grid reveal">
+        <div class="screenshot-wrap screenshot-placeholder main" onclick="openLightbox('screenshot1.png', 'Main window')" style="padding:0;overflow:hidden;background:#1a201a;cursor:pointer;">
+          <img src="screenshot1.png" alt="FernLauncher main window" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-lg);display:block;" />
+          <div class="screenshot-overlay"><span>🔍 View</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+          <div class="screenshot-wrap screenshot-placeholder" style="aspect-ratio:4/3;padding:0;overflow:hidden;background:#1a201a;cursor:pointer;" onclick="openLightbox('screenshot2.png', 'Settings')">
+            <img src="screenshot2.png" alt="FernLauncher settings" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-lg);display:block;" />
+            <div class="screenshot-overlay"><span>🔍 View</span></div>
+          </div>
+          <div class="screenshot-wrap screenshot-placeholder" style="aspect-ratio:4/3;padding:0;overflow:hidden;background:#1a201a;cursor:pointer;" onclick="openLightbox('screenshot3.png', 'New instance')">
+            <img src="screenshot3.png" alt="FernLauncher new instance dialog" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-lg);display:block;" />
+            <div class="screenshot-overlay"><span>🔍 View</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lightbox -->
+      <div id="lightbox" onclick="closeLightbox()" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:2rem;cursor:zoom-out;">
+        <img id="lightbox-img" src="" alt="" style="max-width:90vw;max-height:88vh;border-radius:12px;box-shadow:0 32px 80px rgba(0,0,0,0.6);object-fit:contain;" />
+        <button onclick="closeLightbox()" style="position:fixed;top:1.5rem;right:1.5rem;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:50%;width:40px;height:40px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;">✕</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA / DOWNLOAD -->
+  <section class="cta" id="download">
+    <div class="cta-inner">
+      <p class="section-label reveal">Download</p>
+      <h2 class="section-title reveal">Ready to launch?</h2>
+      <p class="section-desc reveal">FernLauncher is free, open source, and ready in under a minute.</p>
+      <div class="cta-actions reveal">
+        <a href="https://github.com/FernLauncher/fernlauncher/releases" class="btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download for Windows
+        </a>
+        <a href="https://github.com/FernLauncher/fernlauncher" target="_blank" class="btn-secondary">
+          View Source on GitHub
+        </a>
+      </div>
+      <div class="cta-meta reveal">
+        <span><span class="check">✓</span> Free forever</span>
+        <span><span class="check">✓</span> No telemetry</span>
+        <span><span class="check">✓</span> Open source (GitHub)</span>
+        <span><span class="check">✓</span> Windows x64</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">
+      <span>🌿</span>
+      <span>FernLauncher</span>
+    </div>
+    <ul class="footer-links">
+      <li><a href="https://github.com/FernLauncher/fernlauncher" target="_blank">GitHub</a></li>
+      <li><a href="https://github.com/FernLauncher/fernlauncher/releases" target="_blank">Releases</a></li>
+      <li><a href="https://github.com/FernLauncher/fernlauncher/issues" target="_blank">Issues</a></li>
+    </ul>
+    <p>Not affiliated with Mojang or Microsoft.</p>
+  </footer>
+
+  <script>
+    // Scroll reveal
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          observer.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    reveals.forEach(el => observer.observe(el));
+
+    // Lightbox
+    function openLightbox(src, alt) {
+      const lb = document.getElementById('lightbox');
+      const img = document.getElementById('lightbox-img');
+      img.src = src;
+      img.alt = alt;
+      lb.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+      document.getElementById('lightbox').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+  </script>
+</body>
+</html>
